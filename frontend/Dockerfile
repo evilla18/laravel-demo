@@ -4,7 +4,8 @@ FROM node:22-alpine AS frontend
 WORKDIR /app
 
 # Instalar dependencias primero (cache de Docker layers)
-COPY package.json package-lock.json* ./
+# Solo copiamos package.json (sin lock) para que npm resuelva deps para linux
+COPY package.json ./
 RUN npm install
 
 # Copiar código fuente

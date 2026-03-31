@@ -16,7 +16,7 @@ En el Día 1 se cubrió la visión general de Claude (Chat, Code, Cowork), la an
 
 ## Objetivo General
 
-Demostrar en vivo cómo Claude Code y Cowork aceleran el desarrollo de una aplicación full-stack (Laravel API + React frontend) con autenticación JWT, desde la creación del proyecto hasta la prueba end-to-end, mostrando flujos de trabajo colaborativos reales.
+Demostrar en vivo cómo Claude Code y Cowork aceleran el desarrollo de una aplicación full-stack (Laravel 13 API + React 19 frontend) con autenticación JWT, desde la creación del proyecto hasta la prueba end-to-end, mostrando flujos de trabajo colaborativos reales.
 
 ---
 
@@ -32,7 +32,7 @@ App sencilla de gestión de tareas con autenticación. El usuario se registra, i
 **Objetivo:** Mostrar cómo Claude Code entiende y trabaja con un repositorio desde cero, incluyendo la dockerización completa para levantar el proyecto en vivo.
 
 **Lo que se muestra:**
-- Crear proyecto Laravel con `composer create-project`
+- Crear proyecto Laravel con `composer create-project` (via Docker: `docker run --rm -v $(pwd):/app -w /app composer:2 create-project`)
 - Inicializar repositorio Git
 - Abrir Claude Code en la terminal (`claude`)
 - Pedirle a Claude que analice la estructura del proyecto
@@ -48,8 +48,8 @@ Ya tengo el proyecto Laravel creado. Necesito:
 2. Configurar CORS en Laravel para que acepte requests del frontend en localhost:5173
 3. Crear un .gitignore apropiado para ambos proyectos
 4. Dockerizar el proyecto completo para desarrollo:
-   - Dockerfile para el backend Laravel (PHP 8.2 + Composer + SQLite)
-   - Dockerfile para el frontend React (Node 18 + Vite con HMR)
+   - Dockerfile para el backend Laravel (PHP 8.4 + Composer + SQLite)
+   - Dockerfile para el frontend React (Node 22 + Vite con HMR)
    - docker-compose.yml que levante ambos servicios
    - .dockerignore para ambos contextos
    - El proyecto se tiene que poder levantar con "docker compose up --build"
@@ -92,7 +92,7 @@ Usá el paquete tymon/jwt-auth. Implementá:
 - Usá SQLite como base de datos para simplificar
 - Corré las migrations
 
-Seguí las convenciones de Laravel 11. Hacé un commit cuando termines.
+Seguí las convenciones de Laravel 13. Hacé un commit cuando termines.
 ```
 
 **Puntos a destacar para la audiencia:**
@@ -300,6 +300,207 @@ Encontrá la causa y arreglalo.
 
 ---
 
+## Guía de Setup desde Cero (si hay que recrear el proyecto)
+
+Esta guía documenta los pasos exactos para levantar el proyecto desde un directorio vacío.
+Todos los comandos usan Docker — **no se necesita PHP, Composer ni Node instalados localmente**.
+
+### Paso 1: Crear directorio y archivos base
+
+```bash
+mkdir taskboard && cd taskboard
+git init
+```
+
+### Paso 2: Crear proyecto Laravel via Docker
+
+```bash
+# Crear Laravel en un directorio temporal
+docker run --rm -v "$(pwd)":/app -w /app composer:2 create-project laravel/laravel temp-laravel --no-interaction
+
+# Mover archivos al directorio raíz (sin pisar los que ya existan)
+cp -r temp-laravel/.env temp-laravel/.env.example temp-laravel/.editorconfig temp-laravel/.gitattributes . 2>/dev/null
+for item in app artisan bootstrap composer.json composer.lock config database package.json phpunit.xml public resources routes storage tests vendor vite.config.js; do
+  cp -r "temp-laravel/$item" .
+done
+rm -rf temp-laravel
+```
+
+> **Importante:** `composer:2` usa la última versión de PHP disponible en su imagen. Las dependencias de Symfony/Laravel se resuelven para esa versión. El Dockerfile del backend **debe usar la misma versión mayor de PHP** (actualmente 8.4). Si no coincide, `composer install` falla con errores de versión.
+
+### Paso 3: Crear proyecto React manualmente
+
+> **No usar `npx create-vite` dentro de Docker.** Tiene problemas con templates (genera vanilla en vez de React) y con versiones de Node. Es más rápido y confiable crear los archivos manualmente.
+
+```bash
+mkdir -p frontend/src frontend/public
+```
+
+Crear `frontend/package.json`:
+```json
+{
+  "name": "taskboard-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.4.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "tailwindcss": "^4.2.2",
+    "vite": "^6.3.1"
+  }
+}
+```
+
+Crear `frontend/vite.config.js`:
+```js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+  },
+})
+```
+
+Crear `frontend/index.html`:
+```html
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TaskBoard</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+```
+
+Crear `frontend/src/main.jsx`:
+```jsx
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)
+```
+
+Crear `frontend/src/App.jsx`:
+```jsx
+function App() {
+  return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <h1 className="text-4xl font-bold text-indigo-600">TaskBoard</h1>
+    </div>
+  )
+}
+
+export default App
+```
+
+Crear `frontend/src/index.css`:
+```css
+@import "tailwindcss";
+```
+
+### Paso 4: Instalar dependencias del frontend
+
+```bash
+cd frontend && npm install && cd ..
+```
+
+> Si npm no está disponible localmente, usar Docker:
+> `docker run --rm -v "$(pwd)/frontend":/app -w /app node:22-alpine npm install`
+
+### Paso 5: Crear archivos Docker
+
+Los Dockerfiles y docker-compose.yml deben respetar estas reglas:
+
+**Dockerfile (backend):**
+- Imagen base: `php:8.4-cli` (NO 8.2, Laravel 13 requiere >= 8.4)
+- Composer: `composer install` sin flag `--no-dev` (PailServiceProvider necesita deps dev)
+
+**frontend/Dockerfile:**
+- Imagen base: `node:22-alpine`
+- **NO copiar `package-lock.json`** al container (solo `package.json`). El lock file se genera en macOS y tiene binarios nativos incompatibles con Linux ARM64 del container, causando error de `@rollup/rollup-linux-arm64-musl`
+
+**docker-compose.yml:**
+- NO incluir `version: "3.8"` (obsoleto en Docker Compose v2, genera warning)
+
+### Paso 6: Configurar CORS en Laravel
+
+Crear `config/cors.php` manualmente (Laravel 13 no lo trae por defecto):
+```php
+<?php
+
+return [
+    'paths' => ['api/*'],
+    'allowed_methods' => ['*'],
+    'allowed_origins' => ['http://localhost:5173'],
+    'allowed_origins_patterns' => [],
+    'allowed_headers' => ['*'],
+    'exposed_headers' => [],
+    'max_age' => 0,
+    'supports_credentials' => false,
+];
+```
+
+### Paso 7: Levantar y verificar
+
+```bash
+docker compose up --build
+```
+
+Verificar:
+- http://localhost:8000 → Laravel welcome page
+- http://localhost:5173 → React "TaskBoard"
+
+Si hay errores de cache o módulos nativos:
+```bash
+docker compose down -v
+docker compose build --no-cache
+docker compose up
+```
+
+### Paso 8: Commit inicial
+
+```bash
+git add . && git commit -m "feat: setup inicial del proyecto TaskBoard"
+```
+
+### Resumen de problemas conocidos y soluciones
+
+| Problema | Causa | Solución |
+|----------|-------|----------|
+| `composer install` falla con "requires php >=8.4" | Dockerfile usa `php:8.2-cli` pero deps requieren 8.4 | Usar `php:8.4-cli` en el Dockerfile |
+| `PailServiceProvider not found` | Composer instaló con `--no-dev` | Quitar flag `--no-dev` de `composer install` |
+| `Cannot find module @rollup/rollup-linux-arm64-musl` | `package-lock.json` de macOS copiado al container Linux | No copiar `package-lock.json` en el Dockerfile del frontend |
+| `create-vite` genera template vanilla (no React) | Bug con versiones viejas de Node en Docker | Crear archivos React manualmente |
+| Warning "attribute version is obsolete" | `version: "3.8"` en docker-compose.yml | Eliminar la línea `version` |
+
+---
+
 ## Requisitos Técnicos Previos (para el capacitador)
 
 ### Software necesario
@@ -310,15 +511,15 @@ Encontrá la causa y arreglalo.
 - VS Code o editor visual (para mostrar los archivos generados)
 - Navegador con DevTools abierto
 
-> **Nota:** Con Docker no es necesario tener PHP, Composer, Node ni SQLite instalados localmente. Todas las dependencias corren dentro de los containers. Si Docker no está disponible, instalar: PHP 8.2+ con Composer, Node.js 18+ con npm, SQLite3.
+> **Nota:** Con Docker no es necesario tener PHP, Composer, Node ni SQLite instalados localmente. Todas las dependencias corren dentro de los containers. Si Docker no está disponible, instalar: PHP 8.4+ con Composer, Node.js 20+ con npm, SQLite3.
 
 ### Preparación pre-demo
 1. Tener Docker instalado y verificado (`docker compose version`)
 2. **Pre-descargar las imágenes Docker** para no depender de la red durante la demo:
    ```bash
-   docker pull php:8.2-cli
+   docker pull php:8.4-cli
    docker pull composer:2
-   docker pull node:18-alpine
+   docker pull node:22-alpine
    ```
 3. Tener un proyecto "de respaldo" ya construido por si algo falla en vivo
 4. **Pre-buildear los containers del backup**: `docker compose build` en el proyecto de respaldo
@@ -330,7 +531,9 @@ Encontrá la causa y arreglalo.
 ### Tips para la demo en vivo
 - Si Claude tarda, llenar el silencio explicando qué está haciendo
 - Tener el proyecto backup listo para switchear si algo se rompe
-- **Si Docker falla, tener el fallback manual listo** (`php artisan serve` + `npm run dev`)
+- **Si Docker falla, tener el fallback manual listo** (`php artisan serve` + `npm run dev`). Requiere PHP 8.4+, Composer y Node 20+ local
+- **Si hay errores de módulos nativos en el frontend** (rollup, esbuild), limpiar volumes: `docker compose down -v` y rebuildar con `docker compose build --no-cache`
+- **Composer debe instalar CON deps dev** (sin `--no-dev`) para evitar error de PailServiceProvider
 - Mostrar los archivos generados en VS Code para que la audiencia vea el código
 - Pausar después de cada etapa para preguntas rápidas
 - Si un error surge inesperadamente, aprovecharlo para la etapa de debugging

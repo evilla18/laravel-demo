@@ -1,5 +1,5 @@
-# ---- Backend: Laravel 11 + PHP 8.2 ----
-FROM php:8.2-cli AS backend
+# ---- Backend: Laravel + PHP 8.4 ----
+FROM php:8.4-cli AS backend
 
 # Dependencias del sistema
 RUN apt-get update && apt-get install -y \
@@ -14,7 +14,7 @@ WORKDIR /app
 
 # Instalar dependencias PHP primero (cache de Docker layers)
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-interaction --prefer-dist
+RUN composer install --no-scripts --no-interaction --prefer-dist
 
 # Copiar el resto del proyecto
 COPY . .
