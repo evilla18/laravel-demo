@@ -1,0 +1,14 @@
+# Dependencias (se instalan dentro del container)
+node_modules/
+
+# Build output
+dist/
+
+# IDE y OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile

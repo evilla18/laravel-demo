@@ -1,0 +1,30 @@
+# Laravel
+/vendor
+/node_modules
+/.env
+/.env.backup
+/.env.production
+/storage/*.key
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/database/database.sqlite
+/public/hot
+/public/storage
+/bootstrap/cache/*
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+
+# Frontend
+/frontend/node_modules
+/frontend/dist
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store

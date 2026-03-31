@@ -1,0 +1,35 @@
+# Dependencias (se instalan dentro del container)
+vendor/
+node_modules/
+
+# Archivos de entorno locales
+.env
+.env.backup
+.env.production
+
+# Logs y cache
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+
+# Base de datos local
+database/database.sqlite
+
+# IDE y OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker (evitar recursión)
+docker-compose.yml
+Dockerfile
+
+# Tests
+tests/
+phpunit.xml
