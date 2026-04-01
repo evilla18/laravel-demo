@@ -143,6 +143,15 @@ export default function DashboardPage() {
                       {task.description}
                     </p>
                   )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(task.created_at).toLocaleString('es-AR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
                 </div>
                 <button
                   onClick={() => handleDelete(task.id)}
